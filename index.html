@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#05060b" />
+    <title>Atomic Codes — Interactive 3D</title>
+    <meta
+      name="description"
+      content="Atomic Codes: a futuristic, quantum-inspired interactive 3D brand experience."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="stage" aria-label="3D scene"></canvas>
+
+      <header class="hud hud--top">
+        <div class="brand">
+          <span class="brand__mark">⚛</span>
+          <span class="brand__name">Atomic Codes</span>
+        </div>
+        <nav class="nav">
+          <button class="nav__btn" data-action="focus-core" type="button">Core</button>
+          <button class="nav__btn" data-action="summon-sentinel" type="button">Sentinel</button>
+          <button class="nav__btn" data-action="toggle-quality" type="button">Quality</button>
+        </nav>
+      </header>
+
+      <aside class="hud hud--left">
+        <div class="panel">
+          <div class="panel__title">Decode Reality</div>
+          <div class="panel__body">
+            Drift through atomic glyphs. Click the Sentinel to open a hologram. Scroll to move
+            through code layers.
+          </div>
+          <div class="panel__chips">
+            <span class="chip">Three.js</span>
+            <span class="chip">Bloom</span>
+            <span class="chip">GLB-ready</span>
+            <span class="chip">Mobile</span>
+          </div>
+        </div>
+      </aside>
+
+      <section class="dialogue" aria-live="polite" aria-atomic="true">
+        <div class="dialogue__frame">
+          <div class="dialogue__title">CODE SENTINEL</div>
+          <div class="dialogue__text" id="dialogueText"></div>
+          <div class="dialogue__actions">
+            <button class="dialogue__btn" data-action="next-line" type="button">Next</button>
+            <button class="dialogue__btn dialogue__btn--ghost" data-action="close-dialogue" type="button">
+              Close
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="hud hud--bottom">
+        <div class="hint">
+          <span class="hint__kbd">Scroll</span> to travel · <span class="hint__kbd">Move</span> to distort
+          particles · <span class="hint__kbd">Tap</span> to interact
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
