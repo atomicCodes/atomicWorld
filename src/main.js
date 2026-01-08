@@ -3,6 +3,21 @@ import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+// Build/version badge (so you always know what you're looking at)
+// These constants are injected by `vite.config.js`.
+const buildBadge = document.getElementById("buildBadge");
+try {
+  // eslint-disable-next-line no-undef
+  const starter = __ATOMIC_CODES_STARTER__;
+  // eslint-disable-next-line no-undef
+  const sha = __ATOMIC_CODES_GIT_SHA__;
+  // eslint-disable-next-line no-undef
+  const builtAt = __ATOMIC_CODES_BUILT_AT__;
+  if (buildBadge) buildBadge.innerHTML = `BUILD: <b>${starter}</b> · ${sha} · ${builtAt}`;
+} catch {
+  if (buildBadge) buildBadge.textContent = "BUILD: UNKNOWN";
+}
+
 // Goal: a clean, obvious starter interaction model:
 // - Drag: orbit
 // - Scroll / swipe: travel through 3 layers (meter + text updates)
