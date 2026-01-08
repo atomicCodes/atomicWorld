@@ -13,9 +13,12 @@ try {
   const sha = __ATOMIC_CODES_GIT_SHA__;
   // eslint-disable-next-line no-undef
   const builtAt = __ATOMIC_CODES_BUILT_AT__;
+  const text = `BUILD: ${starter} · ${sha} · ${builtAt}`;
   if (buildBadge) buildBadge.innerHTML = `BUILD: <b>${starter}</b> · ${sha} · ${builtAt}`;
+  document.title = `Atomic Codes — ${starter} — ${sha}`;
 } catch {
   if (buildBadge) buildBadge.textContent = "BUILD: UNKNOWN";
+  document.title = "Atomic Codes — BUILD UNKNOWN";
 }
 
 // Goal: a clean, obvious starter interaction model:
