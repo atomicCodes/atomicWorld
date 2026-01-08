@@ -130,26 +130,127 @@ scene.add(rim);
 const core = new THREE.Group();
 scene.add(core);
 
-const nucleusMat = new THREE.MeshStandardMaterial({
-  color: 0x0b0d16,
-  emissive: new THREE.Color(0x8cffee),
-  emissiveIntensity: 0.85,
-  roughness: 0.25,
-  metalness: 0.25,
-});
+// 3D Logo Core (from /logo.png)
+const logoCore = new THREE.Group();
+core.add(logoCore);
 
-const nucleus = new THREE.Group();
-for (let i = 0; i < 12; i++) {
-  const r = THREE.MathUtils.randFloat(0.12, 0.24);
-  const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 2), nucleusMat);
-  m.position.set(
-    THREE.MathUtils.randFloatSpread(0.62),
-    THREE.MathUtils.randFloatSpread(0.5),
-    THREE.MathUtils.randFloatSpread(0.62),
-  );
-  nucleus.add(m);
+/** Creates an alpha texture from a black-bg, white-line logo image. */
+async function loadLogoAlphaTexture(url) {
+  const img = await new Promise((resolve, reject) => {
+    const el = new Image();
+    el.decoding = "async";
+    el.onload = () => resolve(el);
+    el.onerror = reject;
+    el.src = url;
+  });
+
+  const w = img.width || 512;
+  const h = img.height || 512;
+  const cnv = document.createElement("canvas");
+  cnv.width = w;
+  cnv.height = h;
+  const ctx = cnv.getContext("2d", { willReadFrequently: true });
+  if (!ctx) throw new Error("No canvas context");
+  ctx.drawImage(img, 0, 0, w, h);
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+
+  // Convert luminance to alpha; force RGB to white.
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i + 0];
+    const g = d[i + 1];
+    const b = d[i + 2];
+    const lum = Math.max(r, g, b); // strong line alpha from white strokes
+    d[i + 0] = 255;
+    d[i + 1] = 255;
+    d[i + 2] = 255;
+    d[i + 3] = lum;
+  }
+  ctx.putImageData(imageData, 0, 0);
+
+  const tex = new THREE.CanvasTexture(cnv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = false;
+  tex.needsUpdate = true;
+  return { tex, w, h };
 }
-core.add(nucleus);
+
+const logoLayers = [];
+async function mountLogoCore() {
+  try {
+    const { tex, w, h } = await loadLogoAlphaTexture("/logo.png");
+    const aspect = w / h;
+
+    // A stack of planes creates a "3D" thickness when rotating.
+    const height = 2.35;
+    const width = height * aspect;
+    const geom = new THREE.PlaneGeometry(width, height, 1, 1);
+
+    // Clear any placeholder
+    logoCore.clear();
+    logoLayers.length = 0;
+
+    const layers = 18;
+    const depth = 0.65;
+    for (let i = 0; i < layers; i++) {
+      const z = -((i / (layers - 1)) * depth);
+      const fade = 1 - i / (layers - 1);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: new THREE.Color(0x8cffee),
+        emissiveIntensity: 0.85 + fade * 0.35,
+        roughness: 0.35,
+        metalness: 0.05,
+        map: tex,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+      });
+      const m = new THREE.Mesh(geom, mat);
+      m.position.z = z;
+      m.renderOrder = 100 + i;
+      logoCore.add(m);
+      logoLayers.push(m);
+    }
+
+    // Backplate glow
+    const back = new THREE.Mesh(
+      new THREE.CircleGeometry(height * 0.72, 40),
+      new THREE.MeshBasicMaterial({
+        color: 0x9b7bff,
+        transparent: true,
+        opacity: 0.08,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
+    );
+    back.position.z = -depth - 0.05;
+    back.renderOrder = 50;
+    logoCore.add(back);
+
+    logoCore.scale.setScalar(1.0);
+    logoCore.position.set(0, 0.15, 0);
+  } catch {
+    // Fallback: simple emissive ring if texture processing fails
+    logoCore.clear();
+    const fallback = new THREE.Mesh(
+      new THREE.TorusKnotGeometry(0.65, 0.12, 120, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0x0b0d16,
+        emissive: new THREE.Color(0x8cffee),
+        emissiveIntensity: 0.9,
+        roughness: 0.25,
+        metalness: 0.35,
+      }),
+    );
+    logoCore.add(fallback);
+  }
+}
+mountLogoCore();
 
 const ringMat = new THREE.LineBasicMaterial({ color: 0x9b7bff, transparent: true, opacity: 0.45 });
 function ring(radius, tilt, rotY) {
@@ -549,11 +650,14 @@ function animate() {
   // Core motion
   core.rotation.y = t * 0.25;
   core.rotation.x = Math.sin(t * 0.22) * 0.12;
-
-  nucleus.children.forEach((m, i) => {
-    const s = 1 + Math.sin(t * 1.8 + i) * 0.03;
-    m.scale.setScalar(s);
-  });
+  if (logoLayers.length) {
+    // Subtle pulse so the logo reads as "alive".
+    const pulse = 0.85 + 0.15 * (0.5 + 0.5 * Math.sin(t * 1.15));
+    for (let i = 0; i < logoLayers.length; i++) {
+      const mat = logoLayers[i].material;
+      mat.emissiveIntensity = pulse * (0.75 + (1 - i / (logoLayers.length - 1)) * 0.55);
+    }
+  }
 
   // Planets: rotate + orbit-line drift
   for (const p of planets) {
