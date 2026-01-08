@@ -177,45 +177,35 @@ async function loadLogoAlphaTexture(url) {
   return { tex, w, h };
 }
 
-const logoLayers = [];
 async function mountLogoCore() {
   try {
     const { tex, w, h } = await loadLogoAlphaTexture("/logo.png");
     const aspect = w / h;
 
-    // A stack of planes creates a "3D" thickness when rotating.
+    // Single spinning logo (cleaner than stacked layers).
     const height = 2.35;
     const width = height * aspect;
     const geom = new THREE.PlaneGeometry(width, height, 1, 1);
 
     // Clear any placeholder
     logoCore.clear();
-    logoLayers.length = 0;
 
-    const layers = 18;
-    const depth = 0.65;
-    for (let i = 0; i < layers; i++) {
-      const z = -((i / (layers - 1)) * depth);
-      const fade = 1 - i / (layers - 1);
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        emissive: new THREE.Color(0x8cffee),
-        emissiveIntensity: 0.85 + fade * 0.35,
-        roughness: 0.35,
-        metalness: 0.05,
-        map: tex,
-        transparent: true,
-        opacity: 0.9,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
-      });
-      const m = new THREE.Mesh(geom, mat);
-      m.position.z = z;
-      m.renderOrder = 100 + i;
-      logoCore.add(m);
-      logoLayers.push(m);
-    }
+    const logoMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: new THREE.Color(0x8cffee),
+      emissiveIntensity: 1.1,
+      roughness: 0.55,
+      metalness: 0.0,
+      map: tex,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+    });
+    const logo = new THREE.Mesh(geom, logoMat);
+    logo.renderOrder = 100;
+    logoCore.add(logo);
 
     // Backplate glow
     const back = new THREE.Mesh(
@@ -228,7 +218,7 @@ async function mountLogoCore() {
         depthWrite: false,
       }),
     );
-    back.position.z = -depth - 0.05;
+    back.position.z = -0.08;
     back.renderOrder = 50;
     logoCore.add(back);
 
@@ -627,10 +617,15 @@ resize();
 const clock = new THREE.Clock();
 const tmpMat = new THREE.Matrix4();
 const tmpQuat = new THREE.Quaternion();
+const tmpQuat2 = new THREE.Quaternion();
 const tmpScale = new THREE.Vector3(1, 1, 1);
 const tmpPos = new THREE.Vector3();
 const tmpLocal = new THREE.Vector3();
 const tmpEuler = new THREE.Euler();
+const tmpV0 = new THREE.Vector3();
+const tmpV1 = new THREE.Vector3();
+const tmpV2 = new THREE.Vector3();
+const tmpV3 = new THREE.Vector3();
 
 function animate() {
   const dt = Math.min(0.05, clock.getDelta());
@@ -650,14 +645,7 @@ function animate() {
   // Core motion
   core.rotation.y = t * 0.25;
   core.rotation.x = Math.sin(t * 0.22) * 0.12;
-  if (logoLayers.length) {
-    // Subtle pulse so the logo reads as "alive".
-    const pulse = 0.85 + 0.15 * (0.5 + 0.5 * Math.sin(t * 1.15));
-    for (let i = 0; i < logoLayers.length; i++) {
-      const mat = logoLayers[i].material;
-      mat.emissiveIntensity = pulse * (0.75 + (1 - i / (logoLayers.length - 1)) * 0.55);
-    }
-  }
+  logoCore.rotation.z = -t * 0.55;
 
   // Planets: rotate + orbit-line drift
   for (const p of planets) {
@@ -684,44 +672,106 @@ function animate() {
   }
   satellites.instanceMatrix.needsUpdate = true;
 
-  // Ships: fly forward through the scene (looping)
-  const laneStart = -70;
-  const laneEnd = 18;
-  const laneLen = laneEnd - laneStart;
+  // Ships: travel between planets; occasionally take a deep-space route.
+  // Each ship gets a route and picks a new one on arrival.
+  const up = tmpLocal.set(0, 1, 0);
+  const dir = tmpV0;
+  const right = tmpV1;
+  const tangent = tmpV2;
+  const lookTarget = tmpV3;
+
+  function randomPlanetPoint(out, planetIndex, radius) {
+    const center = planets[planetIndex].g.position;
+    out.copy(center);
+    out.x += THREE.MathUtils.randFloatSpread(radius);
+    out.y += THREE.MathUtils.randFloatSpread(radius * 0.7);
+    out.z += THREE.MathUtils.randFloatSpread(radius);
+    return out;
+  }
+
+  function randomDeepPoint(out) {
+    out.set(
+      THREE.MathUtils.randFloatSpread(70),
+      THREE.MathUtils.randFloatSpread(40),
+      THREE.MathUtils.randFloat(-200, -90),
+    );
+    return out;
+  }
+
+  function resetRoute(s, now, allowDeep = true) {
+    const planetCount = planets.length;
+    const a = Math.floor(Math.random() * planetCount);
+    let b = Math.floor(Math.random() * planetCount);
+    if (b === a) b = (b + 1) % planetCount;
+
+    s.a = a;
+    s.b = b;
+    s.t0 = now;
+    s.duration = THREE.MathUtils.randFloat(3.6, 7.8) / Math.max(0.25, s.speedMul);
+    s.arc = THREE.MathUtils.randFloat(0.6, 2.2);
+    s.bank = THREE.MathUtils.randFloatSpread(0.5);
+    s.deep = allowDeep && Math.random() < 0.12;
+
+    randomPlanetPoint(s.p0, s.a, THREE.MathUtils.randFloat(1.8, 3.2));
+    if (s.deep) randomDeepPoint(s.p1);
+    else randomPlanetPoint(s.p1, s.b, THREE.MathUtils.randFloat(2.0, 3.6));
+  }
+
   for (let i = 0; i < fighterCount; i++) {
     const s = fighterData[i];
-    const z = laneStart + ((s.z0 + t * s.speed + i * 1.3) % laneLen);
-    const wobX = Math.sin(t * s.wobble + i) * 0.55;
-    const wobY = Math.cos(t * (s.wobble * 0.85) + i) * 0.35;
+    if (!s.p0) {
+      s.p0 = new THREE.Vector3();
+      s.p1 = new THREE.Vector3();
+      s.speedMul = THREE.MathUtils.randFloat(1.0, 1.6);
+      resetRoute(s, t, true);
+    }
+    const u = (t - s.t0) / s.duration;
+    if (u >= 1) resetRoute(s, t, true);
+    const uu = THREE.MathUtils.clamp(u, 0, 1);
 
-    tmpPos.set(s.x + wobX, s.y + wobY, z);
-    tmpQuat.setFromEuler(
-      new THREE.Euler(
-        s.pitch + Math.sin(t * 0.8 + i) * 0.12,
-        s.yaw + Math.sin(t + i) * 0.15,
-        s.roll + Math.sin(t * 1.2 + i) * 0.18,
-      ),
-    );
-    tmpMat.compose(tmpPos, tmpQuat, tmpScale);
+    // Position on path with arced offset
+    dir.subVectors(s.p1, s.p0);
+    const basePos = tmpPos.copy(s.p0).addScaledVector(dir, uu);
+
+    tangent.copy(dir).normalize();
+    right.copy(tangent).cross(up).normalize();
+    const arc = Math.sin(Math.PI * uu) * s.arc;
+    basePos.addScaledVector(right, arc * (0.35 + (i % 7) * 0.02));
+    basePos.y += Math.cos(Math.PI * uu) * (s.arc * 0.18);
+
+    // Orientation: face direction of travel, slight bank
+    tmpQuat.setFromRotationMatrix(tmpMat.lookAt(basePos, lookTarget.copy(basePos).add(tangent), up));
+    tmpQuat2.setFromEuler(tmpEuler.set(0, 0, s.bank));
+    tmpQuat.multiply(tmpQuat2);
+    tmpMat.compose(basePos, tmpQuat, tmpScale.setScalar(1));
     fighters.setMatrixAt(i, tmpMat);
   }
   fighters.instanceMatrix.needsUpdate = true;
 
   for (let i = 0; i < freighterCount; i++) {
     const s = freighterData[i];
-    const z = laneStart + ((s.z0 + t * s.speed + i * 2.0) % laneLen);
-    const wobX = Math.sin(t * s.wobble + i) * 0.28;
-    const wobY = Math.cos(t * (s.wobble * 0.85) + i) * 0.18;
+    if (!s.p0) {
+      s.p0 = new THREE.Vector3();
+      s.p1 = new THREE.Vector3();
+      s.speedMul = THREE.MathUtils.randFloat(0.7, 1.1);
+      resetRoute(s, t, true);
+    }
+    const u = (t - s.t0) / s.duration;
+    if (u >= 1) resetRoute(s, t, true);
+    const uu = THREE.MathUtils.clamp(u, 0, 1);
 
-    tmpPos.set(s.x + wobX, s.y + wobY, z);
-    tmpQuat.setFromEuler(
-      new THREE.Euler(
-        s.pitch + Math.sin(t * 0.55 + i) * 0.08,
-        s.yaw + Math.sin(t * 0.8 + i) * 0.09,
-        s.roll + Math.sin(t * 0.7 + i) * 0.07,
-      ),
-    );
-    tmpMat.compose(tmpPos, tmpQuat, tmpScale);
+    dir.subVectors(s.p1, s.p0);
+    const basePos = tmpPos.copy(s.p0).addScaledVector(dir, uu);
+    tangent.copy(dir).normalize();
+    right.copy(tangent).cross(up).normalize();
+    const arc = Math.sin(Math.PI * uu) * (s.arc * 0.65);
+    basePos.addScaledVector(right, arc * 0.28);
+    basePos.y += Math.cos(Math.PI * uu) * (s.arc * 0.1);
+
+    tmpQuat.setFromRotationMatrix(tmpMat.lookAt(basePos, lookTarget.copy(basePos).add(tangent), up));
+    tmpQuat2.setFromEuler(tmpEuler.set(0, 0, s.bank * 0.5));
+    tmpQuat.multiply(tmpQuat2);
+    tmpMat.compose(basePos, tmpQuat, tmpScale.setScalar(1.15));
     freighters.setMatrixAt(i, tmpMat);
   }
   freighters.instanceMatrix.needsUpdate = true;
