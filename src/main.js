@@ -104,9 +104,15 @@ controls.minDistance = 3.5;
 controls.maxDistance = 14;
 controls.target.set(0, 0.25, 0);
 
+const BASE_TARGET = new THREE.Vector3(0, 0.25, 0);
+const BASE_CAMERA = new THREE.Vector3(0, 0.6, 7.5);
+const TRAVEL_VEC = new THREE.Vector3(0, 0, -52); // how far layer-travel moves you forward
+
 btnReset?.addEventListener("click", () => {
-  camera.position.set(0, 0.6, 7.5);
-  controls.target.set(0, 0.25, 0);
+  travel.target = 0;
+  travel.pos = 0;
+  camera.position.copy(BASE_CAMERA);
+  controls.target.copy(BASE_TARGET);
   controls.update();
 });
 
@@ -231,10 +237,11 @@ function addPlanet({ r, x, y, z, color, ring = false }) {
   planets.push({ g, mesh, orbits, spin: THREE.MathUtils.randFloat(0.05, 0.18) * (Math.random() < 0.5 ? -1 : 1) });
 }
 
-addPlanet({ r: 1.15, x: 6.5, y: 1.6, z: -10, color: 0x8cffee, ring: true });
-addPlanet({ r: 1.75, x: -8.0, y: -1.2, z: -22, color: 0x9b7bff, ring: false });
-addPlanet({ r: 0.95, x: 4.4, y: -2.3, z: -34, color: 0xbfefff, ring: false });
-addPlanet({ r: 2.2, x: 10.2, y: 2.2, z: -48, color: 0x8cffee, ring: true });
+// Place planets so each "layer" has a distinct cluster.
+addPlanet({ r: 1.15, x: 6.5, y: 1.6, z: -16, color: 0x8cffee, ring: true });   // layer 1
+addPlanet({ r: 1.75, x: -8.0, y: -1.2, z: -26, color: 0x9b7bff, ring: false }); // layer 1
+addPlanet({ r: 0.95, x: 4.4, y: -2.3, z: -36, color: 0xbfefff, ring: false });  // layer 2
+addPlanet({ r: 2.2, x: 10.2, y: 2.2, z: -54, color: 0x8cffee, ring: true });    // layer 2
 
 // Ships (wireframe instanced)
 const shipCount = Math.min(220, Math.max(120, Math.floor((window.innerWidth * window.innerHeight) / 7000)));
@@ -272,7 +279,8 @@ ships.instanceColor = new THREE.InstancedBufferAttribute(shipColors, 3);
 
 // --- Sentinel (hover + click target) ---
 const sentinel = new THREE.Group();
-sentinel.position.set(-2.4, 0.0, 2.6);
+// Put the Sentinel deeper so Layer 2 feels different/earned.
+sentinel.position.set(-2.8, 0.0, -38);
 scene.add(sentinel);
 
 const sentinelBody = new THREE.Mesh(
@@ -415,9 +423,12 @@ function animate() {
   travel.pos = THREE.MathUtils.lerp(travel.pos, travel.target, 1 - Math.pow(0.0008, dt));
   updateLayerUI();
 
-  // Move the whole world backwards as you travel (clear, no magic)
-  const worldZ = THREE.MathUtils.lerp(0, -42, travel.pos);
-  scene.position.z = worldZ;
+  // Travel moves the *focus point* (OrbitControls target) forward through Z layers.
+  // Keep the camera's current orbit offset, so drag-orbit still works at every layer.
+  const desiredTarget = BASE_TARGET.clone().addScaledVector(TRAVEL_VEC, travel.pos);
+  const orbitOffset = camera.position.clone().sub(controls.target);
+  controls.target.copy(desiredTarget);
+  camera.position.copy(desiredTarget).add(orbitOffset);
 
   // Core motion
   core.rotation.y = t * 0.25;
