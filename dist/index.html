@@ -12,13 +12,34 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/assets/index-DjOcOaBs.js"></script>
+    <script type="module" crossorigin src="/assets/index-CJ3gMeDQ.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-BJMXHlJ9.css">
   </head>
   <body>
     <canvas id="c"></canvas>
 
-    <div class="build" id="buildBadge">BUILD BADGE: LOADING…</div>
+    <div
+      class="build"
+      id="buildBadge"
+      style="
+        position: fixed;
+        left: 50%;
+        top: 10px;
+        transform: translateX(-50%);
+        z-index: 99999;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 2px solid rgba(255, 61, 129, 0.7);
+        background: rgba(20, 10, 18, 0.85);
+        color: rgba(255, 255, 255, 0.92);
+        font: 700 13px/1.1 'Space Grotesk', system-ui, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        pointer-events: none;
+      "
+    >
+      BUILD BADGE: LOADING…
+    </div>
 
     <header class="topbar">
       <div class="brand">
@@ -60,7 +81,7 @@
 
     <section class="help" id="help" aria-live="polite">
       <div class="help__frame">
-        <div class="help__title">How to interact</div>
+        <div class="help__title">How to interact (CLEAN-REBUILD)</div>
         <ul class="help__list">
           <li><b>Drag</b> to orbit the scene</li>
           <li><b>Scroll</b> (or swipe) to travel through layers</li>
