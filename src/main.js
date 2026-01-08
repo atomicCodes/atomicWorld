@@ -107,7 +107,7 @@ controls.target.set(0, 0.25, 0);
 
 const BASE_TARGET = new THREE.Vector3(0, 0.25, 0);
 const BASE_CAMERA = new THREE.Vector3(0, 0.6, 7.5);
-const TRAVEL_VEC = new THREE.Vector3(0, 0, -52); // how far layer-travel moves you forward
+const ZOOM_RANGE = { near: 7.5, far: 26.0 }; // scroll zooms outward through the solar system
 
 btnReset?.addEventListener("click", () => {
   travel.target = 0;
@@ -304,9 +304,22 @@ function addOrbitRing(parent, radius, color, opacity = 0.45) {
   return ringLine;
 }
 
-function addPlanet({ r, x, y, z, color, ring = false, segW = 12, segH = 10, opacity = 0.65 }) {
+function addPlanet({
+  r,
+  color,
+  ring = false,
+  segW = 12,
+  segH = 10,
+  opacity = 0.65,
+  orbitRadius = 10,
+  orbitSpeed = 0.18,
+  orbitPhase = 0,
+  orbitIncl = 0,
+  orbitSquash = 0.78,
+  orbitY = 0,
+}) {
   const g = new THREE.Group();
-  g.position.set(x, y, z);
+  g.position.set(orbitRadius, orbitY, 0);
 
   // Simplified planet wireframe: fewer segments + line wireframe (cleaner than triangle wireframe).
   const sphere = new THREE.SphereGeometry(r, segW, segH);
@@ -335,29 +348,37 @@ function addPlanet({ r, x, y, z, color, ring = false, segW = 12, segH = 10, opac
   }
 
   universe.add(g);
-  planets.push({ g, mesh, orbits, spin: THREE.MathUtils.randFloat(0.05, 0.18) * (Math.random() < 0.5 ? -1 : 1) });
+  planets.push({
+    g,
+    mesh,
+    orbits,
+    spin: THREE.MathUtils.randFloat(0.05, 0.18) * (Math.random() < 0.5 ? -1 : 1),
+    orbit: {
+      radius: orbitRadius,
+      speed: orbitSpeed,
+      phase: orbitPhase,
+      incl: orbitIncl,
+      squash: orbitSquash,
+      y: orbitY,
+    },
+  });
 }
 
-// Place planets so each "layer" has a distinct cluster.
-// Layer 0 (near core): subtle moons
-addPlanet({ r: 0.55, x: -4.8, y: 1.4, z: -6, color: 0x9ad5ff, ring: false, segW: 10, segH: 8, opacity: 0.45 });
-addPlanet({ r: 0.7, x: 3.8, y: -1.1, z: -8.5, color: 0xff7bd8, ring: false, segW: 10, segH: 8, opacity: 0.48 });
-
-// Layer 1 cluster
-addPlanet({ r: 1.15, x: 6.5, y: 1.6, z: -16, color: 0x39ffd1, ring: true, segW: 12, segH: 10 });
-addPlanet({ r: 1.75, x: -8.0, y: -1.2, z: -26, color: 0x7d6bff, ring: false, segW: 12, segH: 10 });
-addPlanet({ r: 1.05, x: -1.2, y: 2.8, z: -24, color: 0xffc36a, ring: false, segW: 11, segH: 9, opacity: 0.58 });
-
-// Layer 2 cluster (deeper)
-addPlanet({ r: 0.95, x: 4.4, y: -2.3, z: -36, color: 0x6ae4ff, ring: false, segW: 11, segH: 9 });
-addPlanet({ r: 2.2, x: 10.2, y: 2.2, z: -54, color: 0x39ffd1, ring: true, segW: 12, segH: 10, opacity: 0.55 });
-addPlanet({ r: 1.35, x: -10.5, y: 1.8, z: -48, color: 0xff7bd8, ring: true, segW: 12, segH: 10, opacity: 0.5 });
-addPlanet({ r: 1.9, x: 0.5, y: -2.4, z: -62, color: 0xa7ff6a, ring: false, segW: 12, segH: 10, opacity: 0.5 });
+// Solar-system style orbits: different radii + speeds + inclinations.
+addPlanet({ r: 0.55, color: 0x9ad5ff, ring: false, segW: 10, segH: 8, opacity: 0.48, orbitRadius: 4.6, orbitSpeed: 0.42, orbitPhase: 0.2, orbitIncl: 0.25, orbitY: 0.25 });
+addPlanet({ r: 0.7, color: 0xff7bd8, ring: false, segW: 10, segH: 8, opacity: 0.5, orbitRadius: 6.2, orbitSpeed: 0.34, orbitPhase: 1.2, orbitIncl: -0.18, orbitY: -0.1 });
+addPlanet({ r: 1.15, color: 0x39ffd1, ring: true, segW: 12, segH: 10, orbitRadius: 8.6, orbitSpeed: 0.24, orbitPhase: 2.3, orbitIncl: 0.12, orbitY: 0.05 });
+addPlanet({ r: 1.05, color: 0xffc36a, ring: false, segW: 11, segH: 9, opacity: 0.58, orbitRadius: 11.2, orbitSpeed: 0.18, orbitPhase: 3.2, orbitIncl: -0.08, orbitY: 0.15 });
+addPlanet({ r: 1.75, color: 0x7d6bff, ring: true, segW: 12, segH: 10, opacity: 0.52, orbitRadius: 14.5, orbitSpeed: 0.13, orbitPhase: 0.8, orbitIncl: 0.22, orbitY: -0.05 });
+addPlanet({ r: 0.95, color: 0x6ae4ff, ring: false, segW: 11, segH: 9, orbitRadius: 17.2, orbitSpeed: 0.1, orbitPhase: 1.9, orbitIncl: -0.28, orbitY: 0.1 });
+addPlanet({ r: 1.35, color: 0xff7bd8, ring: true, segW: 12, segH: 10, opacity: 0.5, orbitRadius: 19.6, orbitSpeed: 0.085, orbitPhase: 2.7, orbitIncl: 0.35, orbitY: 0.0 });
+addPlanet({ r: 1.9, color: 0xa7ff6a, ring: false, segW: 12, segH: 10, opacity: 0.48, orbitRadius: 22.8, orbitSpeed: 0.07, orbitPhase: 4.1, orbitIncl: -0.16, orbitY: -0.15 });
 
 // Ships + Satellites (instanced, with variety)
 const px2 = window.innerWidth * window.innerHeight;
-const fighterCount = Math.min(70, Math.max(28, Math.floor(px2 / 24000)));
-const freighterCount = Math.min(34, Math.max(12, Math.floor(px2 / 52000)));
+// Much fewer ships; treat them as occasional traffic.
+const fighterCount = Math.min(28, Math.max(10, Math.floor(px2 / 52000)));
+const freighterCount = Math.min(14, Math.max(5, Math.floor(px2 / 98000)));
 
 const PALETTE = [
   0x39ffd1, // teal
@@ -591,13 +612,13 @@ function updateLayerUI() {
 
   if (layer === 0) {
     panelTitle.textContent = "Layer 0 — Core";
-    panelBody.textContent = "Drag to orbit the Atomic Core. Scroll / swipe to descend into wireframe space lanes.";
+    panelBody.textContent = "Drag to orbit the logo-sun. Scroll / swipe to zoom out into the solar system.";
   } else if (layer === 1) {
-    panelTitle.textContent = "Layer 1 — Space Lanes";
-    panelBody.textContent = "Planets, ships, and satellites drift by. Hover the Sentinel to highlight it; click/tap to open a hologram.";
+    panelTitle.textContent = "Layer 1 — Inner Orbits";
+    panelBody.textContent = "Inner planets orbit at higher speeds. Ships travel between planets; satellites orbit close to them.";
   } else {
-    panelTitle.textContent = "Layer 2 — Boundary";
-    panelBody.textContent = "The Sentinel guards the interface. This is where AI characters, dialogue, and missions plug in next.";
+    panelTitle.textContent = "Layer 2 — Outer Orbits";
+    panelBody.textContent = "Outer planets orbit slower and wider. Occasionally, ships break away into deep space routes.";
   }
 }
 
@@ -635,12 +656,15 @@ function animate() {
   travel.pos = THREE.MathUtils.lerp(travel.pos, travel.target, 1 - Math.pow(0.0008, dt));
   updateLayerUI();
 
-  // Travel moves the OrbitControls target along a corridor.
-  // IMPORTANT: translate camera + target together so OrbitControls still works.
-  const desiredTarget = BASE_TARGET.clone().addScaledVector(TRAVEL_VEC, travel.pos);
-  const delta = desiredTarget.sub(controls.target);
-  controls.target.add(delta);
-  camera.position.add(delta);
+  // Scroll = zoom out from the logo-sun (keep orbit focus on the core).
+  controls.target.copy(BASE_TARGET);
+  const desiredDistance = THREE.MathUtils.lerp(ZOOM_RANGE.near, ZOOM_RANGE.far, travel.pos);
+  const camOffset = tmpV0.copy(camera.position).sub(controls.target);
+  if (camOffset.lengthSq() < 1e-6) camOffset.set(0, 0.5, 1).normalize();
+  camOffset.normalize().multiplyScalar(desiredDistance);
+  camera.position.copy(controls.target).add(camOffset);
+  controls.minDistance = Math.max(3.5, desiredDistance * 0.55);
+  controls.maxDistance = Math.max(14, desiredDistance * 1.25);
 
   // Core motion
   core.rotation.y = t * 0.25;
@@ -649,6 +673,12 @@ function animate() {
 
   // Planets: rotate + orbit-line drift
   for (const p of planets) {
+    const a = t * p.orbit.speed + p.orbit.phase;
+    tmpV1.set(Math.cos(a) * p.orbit.radius, 0, Math.sin(a) * (p.orbit.radius * p.orbit.squash));
+    tmpEuler.set(p.orbit.incl, a * 0.05, 0);
+    tmpV1.applyEuler(tmpEuler);
+    p.g.position.set(tmpV1.x, p.orbit.y + tmpV1.y, tmpV1.z);
+
     p.mesh.rotation.y += dt * p.spin;
     p.mesh.rotation.x += dt * (p.spin * 0.5);
     p.g.rotation.y += dt * (p.spin * 0.35);
@@ -743,7 +773,7 @@ function animate() {
     tmpQuat.setFromRotationMatrix(tmpMat.lookAt(basePos, lookTarget.copy(basePos).add(tangent), up));
     tmpQuat2.setFromEuler(tmpEuler.set(0, 0, s.bank));
     tmpQuat.multiply(tmpQuat2);
-    tmpMat.compose(basePos, tmpQuat, tmpScale.setScalar(1));
+    tmpMat.compose(basePos, tmpQuat, tmpScale.setScalar(0.72));
     fighters.setMatrixAt(i, tmpMat);
   }
   fighters.instanceMatrix.needsUpdate = true;
@@ -771,7 +801,7 @@ function animate() {
     tmpQuat.setFromRotationMatrix(tmpMat.lookAt(basePos, lookTarget.copy(basePos).add(tangent), up));
     tmpQuat2.setFromEuler(tmpEuler.set(0, 0, s.bank * 0.5));
     tmpQuat.multiply(tmpQuat2);
-    tmpMat.compose(basePos, tmpQuat, tmpScale.setScalar(1.15));
+    tmpMat.compose(basePos, tmpQuat, tmpScale.setScalar(0.9));
     freighters.setMatrixAt(i, tmpMat);
   }
   freighters.instanceMatrix.needsUpdate = true;
