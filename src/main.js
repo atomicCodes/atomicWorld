@@ -107,7 +107,7 @@ controls.target.set(0, 0.25, 0);
 
 const BASE_TARGET = new THREE.Vector3(0, 0.25, 0);
 const BASE_CAMERA = new THREE.Vector3(0, 0.6, 7.5);
-const ZOOM_RANGE = { near: 7.5, far: 26.0 }; // scroll zooms outward through the solar system
+const ZOOM_RANGE = { near: 7.5, far: 48.0 }; // scroll zooms outward through the solar system
 
 btnReset?.addEventListener("click", () => {
   travel.target = 0;
@@ -365,14 +365,14 @@ function addPlanet({
 }
 
 // Solar-system style orbits: different radii + speeds + inclinations.
-addPlanet({ r: 0.55, color: 0x9ad5ff, ring: false, segW: 10, segH: 8, opacity: 0.48, orbitRadius: 4.6, orbitSpeed: 0.42, orbitPhase: 0.2, orbitIncl: 0.25, orbitY: 0.25 });
-addPlanet({ r: 0.7, color: 0xff7bd8, ring: false, segW: 10, segH: 8, opacity: 0.5, orbitRadius: 6.2, orbitSpeed: 0.34, orbitPhase: 1.2, orbitIncl: -0.18, orbitY: -0.1 });
-addPlanet({ r: 1.15, color: 0x39ffd1, ring: true, segW: 12, segH: 10, orbitRadius: 8.6, orbitSpeed: 0.24, orbitPhase: 2.3, orbitIncl: 0.12, orbitY: 0.05 });
-addPlanet({ r: 1.05, color: 0xffc36a, ring: false, segW: 11, segH: 9, opacity: 0.58, orbitRadius: 11.2, orbitSpeed: 0.18, orbitPhase: 3.2, orbitIncl: -0.08, orbitY: 0.15 });
-addPlanet({ r: 1.75, color: 0x7d6bff, ring: true, segW: 12, segH: 10, opacity: 0.52, orbitRadius: 14.5, orbitSpeed: 0.13, orbitPhase: 0.8, orbitIncl: 0.22, orbitY: -0.05 });
-addPlanet({ r: 0.95, color: 0x6ae4ff, ring: false, segW: 11, segH: 9, orbitRadius: 17.2, orbitSpeed: 0.1, orbitPhase: 1.9, orbitIncl: -0.28, orbitY: 0.1 });
-addPlanet({ r: 1.35, color: 0xff7bd8, ring: true, segW: 12, segH: 10, opacity: 0.5, orbitRadius: 19.6, orbitSpeed: 0.085, orbitPhase: 2.7, orbitIncl: 0.35, orbitY: 0.0 });
-addPlanet({ r: 1.9, color: 0xa7ff6a, ring: false, segW: 12, segH: 10, opacity: 0.48, orbitRadius: 22.8, orbitSpeed: 0.07, orbitPhase: 4.1, orbitIncl: -0.16, orbitY: -0.15 });
+addPlanet({ r: 0.55, color: 0x9ad5ff, ring: false, segW: 10, segH: 8, opacity: 0.48, orbitRadius: 4.8, orbitSpeed: 0.44, orbitPhase: 0.2, orbitIncl: 0.25, orbitY: 0.25 });
+addPlanet({ r: 0.7, color: 0xff7bd8, ring: false, segW: 10, segH: 8, opacity: 0.5, orbitRadius: 7.4, orbitSpeed: 0.32, orbitPhase: 1.2, orbitIncl: -0.18, orbitY: -0.1 });
+addPlanet({ r: 1.15, color: 0x39ffd1, ring: true, segW: 12, segH: 10, orbitRadius: 11.2, orbitSpeed: 0.24, orbitPhase: 2.3, orbitIncl: 0.12, orbitY: 0.05 });
+addPlanet({ r: 1.05, color: 0xffc36a, ring: false, segW: 11, segH: 9, opacity: 0.58, orbitRadius: 16.4, orbitSpeed: 0.17, orbitPhase: 3.2, orbitIncl: -0.08, orbitY: 0.15 });
+addPlanet({ r: 1.75, color: 0x7d6bff, ring: true, segW: 12, segH: 10, opacity: 0.52, orbitRadius: 22.8, orbitSpeed: 0.12, orbitPhase: 0.8, orbitIncl: 0.22, orbitY: -0.05 });
+addPlanet({ r: 0.95, color: 0x6ae4ff, ring: false, segW: 11, segH: 9, orbitRadius: 29.6, orbitSpeed: 0.095, orbitPhase: 1.9, orbitIncl: -0.28, orbitY: 0.1 });
+addPlanet({ r: 1.35, color: 0xff7bd8, ring: true, segW: 12, segH: 10, opacity: 0.5, orbitRadius: 37.4, orbitSpeed: 0.075, orbitPhase: 2.7, orbitIncl: 0.35, orbitY: 0.0 });
+addPlanet({ r: 1.9, color: 0xa7ff6a, ring: false, segW: 12, segH: 10, opacity: 0.48, orbitRadius: 46.0, orbitSpeed: 0.06, orbitPhase: 4.1, orbitIncl: -0.16, orbitY: -0.15 });
 
 // Ships + Satellites (instanced, with variety)
 const px2 = window.innerWidth * window.innerHeight;
