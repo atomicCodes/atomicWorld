@@ -14,13 +14,27 @@ function safeGitSha() {
 export default defineConfig(() => {
   const sha = safeGitSha();
   const builtAt = new Date().toISOString();
+  const starter = "CLEAN-REBUILD";
 
   return {
+    // Use both:
+    // - HTML-injected window var (most reliable for dev + build)
+    // - define() constants (handy for direct imports)
     define: {
-      __ATOMIC_CODES_STARTER__: JSON.stringify("CLEAN-REBUILD"),
+      __ATOMIC_CODES_STARTER__: JSON.stringify(starter),
       __ATOMIC_CODES_GIT_SHA__: JSON.stringify(sha),
       __ATOMIC_CODES_BUILT_AT__: JSON.stringify(builtAt),
     },
+    plugins: [
+      {
+        name: "atomic-codes-build-info",
+        transformIndexHtml(html) {
+          const payload = JSON.stringify({ starter, sha, builtAt });
+          const tag = `<script>window.__ATOMIC_CODES_BUILD__=${payload};</script>`;
+          return html.replace("</head>", `${tag}\n</head>`);
+        },
+      },
+    ],
   };
 });
 

@@ -4,20 +4,31 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 // Build/version badge (so you always know what you're looking at)
-// These constants are injected by `vite.config.js`.
+// Build info is injected by `vite.config.js` (window var + optional define constants).
 const buildBadge = document.getElementById("buildBadge");
-try {
-  // eslint-disable-next-line no-undef
-  const starter = __ATOMIC_CODES_STARTER__;
-  // eslint-disable-next-line no-undef
-  const sha = __ATOMIC_CODES_GIT_SHA__;
-  // eslint-disable-next-line no-undef
-  const builtAt = __ATOMIC_CODES_BUILT_AT__;
+function setBuildBadge(starter, sha, builtAt) {
   if (buildBadge) buildBadge.innerHTML = `BUILD: <b>${starter}</b> · ${sha} · ${builtAt}`;
   document.title = `Atomic Codes — ${starter} — ${sha}`;
-} catch {
-  if (buildBadge) buildBadge.textContent = "BUILD: UNKNOWN";
-  document.title = "Atomic Codes — BUILD UNKNOWN";
+}
+
+const win = window;
+const injected = win?.__ATOMIC_CODES_BUILD__;
+if (injected?.starter && injected?.sha && injected?.builtAt) {
+  setBuildBadge(injected.starter, injected.sha, injected.builtAt);
+} else {
+  // Fallback: compile-time constants (may fail if not injected)
+  try {
+    // eslint-disable-next-line no-undef
+    const starter = __ATOMIC_CODES_STARTER__;
+    // eslint-disable-next-line no-undef
+    const sha = __ATOMIC_CODES_GIT_SHA__;
+    // eslint-disable-next-line no-undef
+    const builtAt = __ATOMIC_CODES_BUILT_AT__;
+    setBuildBadge(starter, sha, builtAt);
+  } catch {
+    if (buildBadge) buildBadge.textContent = "BUILD: UNKNOWN (restart dev server)";
+    document.title = "Atomic Codes — BUILD UNKNOWN";
+  }
 }
 
 // Goal: a clean, obvious starter interaction model:
