@@ -4,77 +4,72 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#05060b" />
-    <title>Atomic Codes — Interactive 3D</title>
-    <meta
-      name="description"
-      content="Atomic Codes: a futuristic, quantum-inspired interactive 3D brand experience."
-    />
+    <title>Atomic Codes</title>
+    <meta name="description" content="Atomic Codes — futuristic interactive 3D brand experience." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/assets/index-uWx6X5IK.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-FosaQnIo.css">
+    <script type="module" crossorigin src="/assets/index-_9KFncL4.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C-tzYiW4.css">
   </head>
   <body>
-    <div id="app">
-      <canvas id="stage" aria-label="3D scene"></canvas>
+    <canvas id="c"></canvas>
 
-      <header class="hud hud--top">
-        <div class="brand">
-          <span class="brand__mark">⚛</span>
-          <span class="brand__name">Atomic Codes</span>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__mark">⚛</div>
+        <div class="brand__text">
+          <div class="brand__name">Atomic Codes</div>
+          <div class="brand__tag">Decode reality at the smallest scale</div>
         </div>
-        <nav class="nav">
-          <button class="nav__btn" data-action="focus-core" type="button">Core</button>
-          <button class="nav__btn" data-action="summon-sentinel" type="button">Sentinel</button>
-          <button class="nav__btn" data-action="toggle-quality" type="button">Quality</button>
-        </nav>
-      </header>
+      </div>
 
-      <aside class="hud hud--left">
-        <div class="panel">
-          <div class="panel__title" id="layerTitle">Layer 0 — Atomic Core</div>
-          <div class="panel__body" id="layerBody">
-            Scroll (or swipe) to travel through code layers. Move your pointer to distort the particle
-            field. Click/tap the Sentinel to open a hologram.
-          </div>
-          <div class="panel__chips">
-            <span class="chip">Three.js</span>
-            <span class="chip">Bloom</span>
-            <span class="chip">GLB-ready</span>
-            <span class="chip">Mobile</span>
-          </div>
-        </div>
-      </aside>
+      <div class="actions">
+        <button class="btn" id="btnReset" type="button">Reset view</button>
+        <button class="btn btn--ghost" id="btnHelp" type="button">Help</button>
+      </div>
+    </header>
 
-      <section class="dialogue" aria-live="polite" aria-atomic="true">
-        <div class="dialogue__frame">
-          <div class="dialogue__title">CODE SENTINEL</div>
-          <div class="dialogue__text" id="dialogueText"></div>
-          <div class="dialogue__actions">
-            <button class="dialogue__btn" data-action="next-line" type="button">Next</button>
-            <button class="dialogue__btn dialogue__btn--ghost" data-action="close-dialogue" type="button">
-              Close
-            </button>
-          </div>
-        </div>
-      </section>
+    <aside class="panel" id="panel">
+      <div class="panel__title" id="panelTitle">Layer 0 — Core</div>
+      <div class="panel__body" id="panelBody">
+        Drag to orbit. Scroll / swipe to travel. Hover the Sentinel, then click/tap to open a hologram.
+      </div>
+      <div class="panel__meter">
+        <div class="panel__meterBar" id="meter"></div>
+      </div>
+    </aside>
 
-      <footer class="hud hud--bottom">
-        <div class="footer">
-          <div class="hint">
-            <span class="hint__kbd">Scroll</span> to travel · <span class="hint__kbd">Move</span> to distort
-            particles · <span class="hint__kbd">Tap</span> to interact
-          </div>
-          <div class="meter" aria-label="Travel progress">
-            <div class="meter__bar" id="travelBar"></div>
-          </div>
+    <section class="holo" id="holo" aria-live="polite" aria-atomic="true">
+      <div class="holo__frame">
+        <div class="holo__title">CODE SENTINEL</div>
+        <div class="holo__text" id="holoText">
+          Signal locked. I guard the boundary between code and matter.
         </div>
-      </footer>
-    </div>
+        <div class="holo__actions">
+          <button class="btn" id="btnNext" type="button">Next</button>
+          <button class="btn btn--ghost" id="btnClose" type="button">Close</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="help" id="help" aria-live="polite">
+      <div class="help__frame">
+        <div class="help__title">How to interact</div>
+        <ul class="help__list">
+          <li><b>Drag</b> to orbit the scene</li>
+          <li><b>Scroll</b> (or swipe) to travel through layers</li>
+          <li><b>Hover</b> the Sentinel to highlight it</li>
+          <li><b>Click / Tap</b> the Sentinel to open a hologram</li>
+        </ul>
+        <div class="help__actions">
+          <button class="btn" id="btnHelpClose" type="button">Got it</button>
+        </div>
+      </div>
+    </section>
 
   </body>
 </html>
