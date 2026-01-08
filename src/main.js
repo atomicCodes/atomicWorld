@@ -423,12 +423,12 @@ function animate() {
   travel.pos = THREE.MathUtils.lerp(travel.pos, travel.target, 1 - Math.pow(0.0008, dt));
   updateLayerUI();
 
-  // Travel moves the *focus point* (OrbitControls target) forward through Z layers.
-  // Keep the camera's current orbit offset, so drag-orbit still works at every layer.
+  // Travel moves the OrbitControls target along a corridor.
+  // IMPORTANT: translate camera + target together so OrbitControls still works.
   const desiredTarget = BASE_TARGET.clone().addScaledVector(TRAVEL_VEC, travel.pos);
-  const orbitOffset = camera.position.clone().sub(controls.target);
-  controls.target.copy(desiredTarget);
-  camera.position.copy(desiredTarget).add(orbitOffset);
+  const delta = desiredTarget.sub(controls.target);
+  controls.target.add(delta);
+  camera.position.add(delta);
 
   // Core motion
   core.rotation.y = t * 0.25;
