@@ -15,8 +15,8 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/assets/index-D4bR-zjm.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CPpHE60l.css">
+    <script type="module" crossorigin src="/assets/index-uWx6X5IK.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-FosaQnIo.css">
   </head>
   <body>
     <div id="app">
@@ -36,10 +36,10 @@
 
       <aside class="hud hud--left">
         <div class="panel">
-          <div class="panel__title">Decode Reality</div>
-          <div class="panel__body">
-            Drift through atomic glyphs. Click the Sentinel to open a hologram. Scroll to move
-            through code layers.
+          <div class="panel__title" id="layerTitle">Layer 0 — Atomic Core</div>
+          <div class="panel__body" id="layerBody">
+            Scroll (or swipe) to travel through code layers. Move your pointer to distort the particle
+            field. Click/tap the Sentinel to open a hologram.
           </div>
           <div class="panel__chips">
             <span class="chip">Three.js</span>
@@ -64,9 +64,14 @@
       </section>
 
       <footer class="hud hud--bottom">
-        <div class="hint">
-          <span class="hint__kbd">Scroll</span> to travel · <span class="hint__kbd">Move</span> to distort
-          particles · <span class="hint__kbd">Tap</span> to interact
+        <div class="footer">
+          <div class="hint">
+            <span class="hint__kbd">Scroll</span> to travel · <span class="hint__kbd">Move</span> to distort
+            particles · <span class="hint__kbd">Tap</span> to interact
+          </div>
+          <div class="meter" aria-label="Travel progress">
+            <div class="meter__bar" id="travelBar"></div>
+          </div>
         </div>
       </footer>
     </div>

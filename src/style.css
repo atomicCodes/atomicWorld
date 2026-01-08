@@ -82,6 +82,12 @@ body {
   justify-content: center;
 }
 
+.footer {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -188,6 +194,25 @@ body {
 .hint__kbd {
   color: rgba(140, 255, 238, 0.92);
   font-weight: 600;
+}
+
+.meter {
+  width: min(520px, 86vw);
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(140, 255, 238, 0.14);
+  background: rgba(10, 12, 22, 0.34);
+  backdrop-filter: blur(var(--blur));
+  overflow: hidden;
+}
+
+.meter__bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(140, 255, 238, 0.95), rgba(155, 123, 255, 0.95));
+  box-shadow: 0 0 18px rgba(140, 255, 238, 0.25);
+  transition: width 120ms linear;
 }
 
 .dialogue {

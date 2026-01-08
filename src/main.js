@@ -304,6 +304,9 @@ mountSentinel();
 
 // --- Interaction state ---
 const ui = createUI();
+const layerTitleEl = document.getElementById("layerTitle");
+const layerBodyEl = document.getElementById("layerBody");
+const travelBarEl = document.getElementById("travelBar");
 
 const pointer = {
   x: 0,
@@ -321,7 +324,8 @@ function clamp01(v) {
 }
 
 function setScrollTargetFromDelta(deltaY) {
-  const scale = isSmallScreen() ? 0.0014 : 0.0011;
+  // Make travel very noticeable (the prior values were too subtle).
+  const scale = isSmallScreen() ? 0.0028 : 0.0022;
   scroll.target = clamp01(scroll.target + deltaY * scale);
 }
 
@@ -356,25 +360,30 @@ window.addEventListener(
 );
 
 // pointer
-window.addEventListener("pointermove", (e) => {
+function setPointerFromEvent(e) {
   pointer.x = e.clientX;
   pointer.y = e.clientY;
   pointer.nx = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.ny = (e.clientY / window.innerHeight) * 2 - 1;
-});
+}
+
+window.addEventListener("pointermove", (e) => setPointerFromEvent(e));
 window.addEventListener("pointerdown", () => (pointer.down = true));
 window.addEventListener("pointerup", () => (pointer.down = false));
 
 // Raycast click on sentinel
 const raycaster = new THREE.Raycaster();
-function pickSentinel() {
-  raycaster.setFromCamera({ x: pointer.nx, y: -pointer.ny }, camera);
+function pickSentinel(ndcX, ndcY) {
+  raycaster.setFromCamera({ x: ndcX, y: ndcY }, camera);
   const hits = raycaster.intersectObject(sentinel, true);
   return hits.length ? hits[0] : null;
 }
 
-window.addEventListener("click", () => {
-  const hit = pickSentinel();
+window.addEventListener("click", (e) => {
+  // IMPORTANT: Use the actual click coordinates (previously this relied on the
+  // last pointermove, so clicks often did nothing).
+  setPointerFromEvent(e);
+  const hit = pickSentinel(pointer.nx, -pointer.ny);
   if (!hit) return;
   ui.openDialogue();
   gsap.to(sentinel.rotation, { y: sentinel.rotation.y + Math.PI * 2, duration: 1.1, ease: "power2.out" });
@@ -403,7 +412,7 @@ ui.bindButtonActions((action) => {
 
 // Camera choreography: move through layers on scroll
 const camBase = new THREE.Vector3(0, 0.6, 8.5);
-const camTravel = new THREE.Vector3(0.0, 0.25, -28.0); // delta from base
+const camTravel = new THREE.Vector3(0.25, 0.55, -44.0); // bigger travel so it feels interactive
 
 // Resize
 function resize() {
@@ -440,10 +449,32 @@ function animate() {
   const travel = camTravel.clone().multiplyScalar(scroll.pos);
   camera.position.copy(camBase).add(travel);
 
+  // Visual feedback: travel meter + narrative layer text
+  if (travelBarEl) travelBarEl.style.width = `${Math.round(scroll.pos * 100)}%`;
+  const layer =
+    scroll.pos < 0.33 ? 0 :
+    scroll.pos < 0.66 ? 1 :
+    2;
+  if (layerTitleEl && layerBodyEl) {
+    if (layer === 0) {
+      layerTitleEl.textContent = "Layer 0 — Atomic Core";
+      layerBodyEl.textContent =
+        "You’re in the nucleus chamber. Pointer movement bends the field; scroll moves you through the code stream.";
+    } else if (layer === 1) {
+      layerTitleEl.textContent = "Layer 1 — Code Stream";
+      layerBodyEl.textContent =
+        "Data glyphs thicken. The core becomes a beacon. Scroll deeper to approach the Sentinel boundary process.";
+    } else {
+      layerTitleEl.textContent = "Layer 2 — Sentinel Boundary";
+      layerBodyEl.textContent =
+        "Click/tap the Sentinel to open a hologram. Drop a GLB at public/assets/characters/code-sentinel.glb to replace the placeholder.";
+    }
+  }
+
   // subtle look-at: towards core + drift
   const look = new THREE.Vector3(
-    THREE.MathUtils.lerp(0, pointer.nx * 0.6, 0.35),
-    THREE.MathUtils.lerp(0.2, -pointer.ny * 0.25 + 0.2, 0.35),
+    THREE.MathUtils.lerp(0, pointer.nx * 1.1, 0.35),
+    THREE.MathUtils.lerp(0.2, -pointer.ny * 0.55 + 0.2, 0.35),
     THREE.MathUtils.lerp(0, -6.0 * scroll.pos, 0.35),
   );
   camera.lookAt(look);
@@ -470,7 +501,7 @@ function animate() {
 
   // Particle parallax
   particleMat.uniforms.uTime.value = t;
-  particleMat.uniforms.uParallax.value.set(pointer.nx * 0.6, -pointer.ny * 0.45);
+  particleMat.uniforms.uParallax.value.set(pointer.nx * 1.1, -pointer.ny * 0.85);
 
   // Subtle holo panel
   holo.material.opacity = 0.04 + 0.02 * (0.5 + 0.5 * Math.sin(t * 1.2));
