@@ -169,8 +169,10 @@ scene.add(universe);
 // Stars (simple points field)
 {
   const px = window.innerWidth * window.innerHeight;
-  const farCount = Math.min(5200, Math.max(2200, Math.floor(px / 380)));
-  const nearCount = Math.min(1600, Math.max(600, Math.floor(px / 1500)));
+  // More stars, plus size variety via multiple point layers.
+  const farCount = Math.min(12000, Math.max(5200, Math.floor(px / 240)));
+  const midCount = Math.min(5200, Math.max(2200, Math.floor(px / 520)));
+  const nearCount = Math.min(2200, Math.max(900, Math.floor(px / 1400)));
 
   function makeStarField(count, spread, zMin, zMax, size, opacity, color) {
     const geom = new THREE.BufferGeometry();
@@ -193,8 +195,9 @@ scene.add(universe);
     return new THREE.Points(geom, mat);
   }
 
-  universe.add(makeStarField(farCount, { x: 120, y: 80 }, -180, 40, 0.045, 0.62, 0xbfefff));
-  universe.add(makeStarField(nearCount, { x: 85, y: 60 }, -120, 30, 0.085, 0.85, 0xffffff));
+  universe.add(makeStarField(farCount, { x: 150, y: 100 }, -220, 60, 0.035, 0.55, 0xbfefff)); // tiny
+  universe.add(makeStarField(midCount, { x: 120, y: 85 }, -200, 55, 0.06, 0.65, 0xffffff)); // medium
+  universe.add(makeStarField(nearCount, { x: 95, y: 70 }, -140, 35, 0.11, 0.9, 0xfff6e0)); // big
 }
 
 // Planets (wireframe spheres + orbit rings)
@@ -246,52 +249,96 @@ function addPlanet({ r, x, y, z, color, ring = false, segW = 12, segH = 10, opac
 
 // Place planets so each "layer" has a distinct cluster.
 // Layer 0 (near core): subtle moons
-addPlanet({ r: 0.55, x: -4.8, y: 1.4, z: -6, color: 0xbfefff, ring: false, segW: 10, segH: 8, opacity: 0.45 });
-addPlanet({ r: 0.7, x: 3.8, y: -1.1, z: -8.5, color: 0x9b7bff, ring: false, segW: 10, segH: 8, opacity: 0.48 });
+addPlanet({ r: 0.55, x: -4.8, y: 1.4, z: -6, color: 0x9ad5ff, ring: false, segW: 10, segH: 8, opacity: 0.45 });
+addPlanet({ r: 0.7, x: 3.8, y: -1.1, z: -8.5, color: 0xff7bd8, ring: false, segW: 10, segH: 8, opacity: 0.48 });
 
 // Layer 1 cluster
-addPlanet({ r: 1.15, x: 6.5, y: 1.6, z: -16, color: 0x8cffee, ring: true, segW: 12, segH: 10 });
-addPlanet({ r: 1.75, x: -8.0, y: -1.2, z: -26, color: 0x9b7bff, ring: false, segW: 12, segH: 10 });
-addPlanet({ r: 1.05, x: -1.2, y: 2.8, z: -24, color: 0xbfefff, ring: false, segW: 11, segH: 9, opacity: 0.58 });
+addPlanet({ r: 1.15, x: 6.5, y: 1.6, z: -16, color: 0x39ffd1, ring: true, segW: 12, segH: 10 });
+addPlanet({ r: 1.75, x: -8.0, y: -1.2, z: -26, color: 0x7d6bff, ring: false, segW: 12, segH: 10 });
+addPlanet({ r: 1.05, x: -1.2, y: 2.8, z: -24, color: 0xffc36a, ring: false, segW: 11, segH: 9, opacity: 0.58 });
 
 // Layer 2 cluster (deeper)
-addPlanet({ r: 0.95, x: 4.4, y: -2.3, z: -36, color: 0xbfefff, ring: false, segW: 11, segH: 9 });
-addPlanet({ r: 2.2, x: 10.2, y: 2.2, z: -54, color: 0x8cffee, ring: true, segW: 12, segH: 10, opacity: 0.55 });
-addPlanet({ r: 1.35, x: -10.5, y: 1.8, z: -48, color: 0x9b7bff, ring: true, segW: 12, segH: 10, opacity: 0.5 });
-addPlanet({ r: 1.9, x: 0.5, y: -2.4, z: -62, color: 0xbfefff, ring: false, segW: 12, segH: 10, opacity: 0.5 });
+addPlanet({ r: 0.95, x: 4.4, y: -2.3, z: -36, color: 0x6ae4ff, ring: false, segW: 11, segH: 9 });
+addPlanet({ r: 2.2, x: 10.2, y: 2.2, z: -54, color: 0x39ffd1, ring: true, segW: 12, segH: 10, opacity: 0.55 });
+addPlanet({ r: 1.35, x: -10.5, y: 1.8, z: -48, color: 0xff7bd8, ring: true, segW: 12, segH: 10, opacity: 0.5 });
+addPlanet({ r: 1.9, x: 0.5, y: -2.4, z: -62, color: 0xa7ff6a, ring: false, segW: 12, segH: 10, opacity: 0.5 });
 
-// Ships (wireframe instanced)
-const shipCount = Math.min(220, Math.max(120, Math.floor((window.innerWidth * window.innerHeight) / 7000)));
-// Build a simple recognizable spacecraft silhouette (fuselage + wings + tail + engine).
-const fuselage = new THREE.ConeGeometry(0.14, 0.7, 6, 1, true);
-fuselage.rotateX(Math.PI / 2);
-fuselage.translate(0, 0, 0.15);
+// Ships + Satellites (instanced, with variety)
+const px2 = window.innerWidth * window.innerHeight;
+const fighterCount = Math.min(70, Math.max(28, Math.floor(px2 / 24000)));
+const freighterCount = Math.min(34, Math.max(12, Math.floor(px2 / 52000)));
 
-const cockpit = new THREE.SphereGeometry(0.12, 8, 6);
-cockpit.translate(0, 0.03, 0.33);
+const PALETTE = [
+  0x39ffd1, // teal
+  0x7d6bff, // violet
+  0xff7bd8, // magenta
+  0x6ae4ff, // blue
+  0xffc36a, // amber
+  0xa7ff6a, // green
+  0xffffff, // white
+];
 
-const wing = new THREE.BoxGeometry(0.62, 0.03, 0.22);
-wing.translate(0, 0.02, 0.12);
+function applyInstanceColors(mesh, count, pickColor) {
+  const arr = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const c = new THREE.Color(pickColor(i));
+    arr[i * 3 + 0] = c.r;
+    arr[i * 3 + 1] = c.g;
+    arr[i * 3 + 2] = c.b;
+  }
+  mesh.instanceColor = new THREE.InstancedBufferAttribute(arr, 3);
+}
 
-const tail = new THREE.BoxGeometry(0.18, 0.06, 0.22);
-tail.translate(0, 0.08, -0.14);
+function makeFleet(geometry, count, baseOpacity) {
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    wireframe: true,
+    transparent: true,
+    opacity: baseOpacity,
+  });
+  const mesh = new THREE.InstancedMesh(geometry, mat, count);
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  universe.add(mesh);
+  return mesh;
+}
 
-const engine = new THREE.CylinderGeometry(0.07, 0.07, 0.26, 6, 1, true);
-engine.rotateX(Math.PI / 2);
-engine.translate(0, -0.02, -0.2);
+// Fighter: slim body + wings + engine
+const fighterFuselage = new THREE.ConeGeometry(0.14, 0.72, 6, 1, true);
+fighterFuselage.rotateX(Math.PI / 2);
+fighterFuselage.translate(0, 0, 0.16);
+const fighterCockpit = new THREE.SphereGeometry(0.12, 8, 6);
+fighterCockpit.translate(0, 0.03, 0.34);
+const fighterWing = new THREE.BoxGeometry(0.7, 0.03, 0.24);
+fighterWing.translate(0, 0.02, 0.1);
+const fighterTail = new THREE.BoxGeometry(0.18, 0.08, 0.2);
+fighterTail.translate(0, 0.08, -0.15);
+const fighterEngine = new THREE.CylinderGeometry(0.07, 0.07, 0.28, 6, 1, true);
+fighterEngine.rotateX(Math.PI / 2);
+fighterEngine.translate(0, -0.02, -0.22);
+const fighterGeo = mergeGeometries(
+  [fighterFuselage, fighterCockpit, fighterWing, fighterTail, fighterEngine],
+  false,
+);
 
-const shipGeo = mergeGeometries([fuselage, cockpit, wing, tail, engine], false);
-const shipMat = new THREE.MeshBasicMaterial({
-  color: 0x8cffee,
-  wireframe: true,
-  transparent: true,
-  opacity: 0.5,
-});
-const ships = new THREE.InstancedMesh(shipGeo, shipMat, shipCount);
-ships.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-universe.add(ships);
+// Freighter: boxy hull + cargo pods
+const hull = new THREE.BoxGeometry(0.36, 0.14, 0.78);
+hull.translate(0, 0.02, 0.0);
+const nose = new THREE.ConeGeometry(0.18, 0.24, 6, 1, true);
+nose.rotateX(Math.PI / 2);
+nose.translate(0, 0.02, 0.51);
+const podL = new THREE.CylinderGeometry(0.07, 0.07, 0.62, 6, 1, true);
+podL.rotateX(Math.PI / 2);
+podL.translate(-0.26, -0.04, -0.05);
+const podR = podL.clone();
+podR.translate(0.52, 0, 0);
+const fin = new THREE.BoxGeometry(0.06, 0.22, 0.16);
+fin.translate(0, 0.18, -0.32);
+const freighterGeo = mergeGeometries([hull, nose, podL, podR, fin], false);
 
-const shipData = new Array(shipCount).fill(0).map(() => ({
+const fighters = makeFleet(fighterGeo, fighterCount, 0.55);
+const freighters = makeFleet(freighterGeo, freighterCount, 0.45);
+
+const fighterData = new Array(fighterCount).fill(0).map(() => ({
   x: THREE.MathUtils.randFloatSpread(18),
   y: THREE.MathUtils.randFloatSpread(10),
   z0: THREE.MathUtils.randFloat(-62, 14),
@@ -300,17 +347,49 @@ const shipData = new Array(shipCount).fill(0).map(() => ({
   roll: THREE.MathUtils.randFloatSpread(0.9),
   pitch: THREE.MathUtils.randFloatSpread(0.35),
   wobble: THREE.MathUtils.randFloat(0.6, 1.8),
-  hue: THREE.MathUtils.randFloat(0.48, 0.62),
 }));
 
-const shipColors = new Float32Array(shipCount * 3);
-for (let i = 0; i < shipCount; i++) {
-  const c = new THREE.Color().setHSL(shipData[i].hue, 0.95, 0.62);
-  shipColors[i * 3 + 0] = c.r;
-  shipColors[i * 3 + 1] = c.g;
-  shipColors[i * 3 + 2] = c.b;
+const freighterData = new Array(freighterCount).fill(0).map(() => ({
+  x: THREE.MathUtils.randFloatSpread(20),
+  y: THREE.MathUtils.randFloatSpread(12),
+  z0: THREE.MathUtils.randFloat(-70, 10),
+  speed: THREE.MathUtils.randFloat(1.2, 3.2),
+  yaw: THREE.MathUtils.randFloatSpread(Math.PI),
+  roll: THREE.MathUtils.randFloatSpread(0.4),
+  pitch: THREE.MathUtils.randFloatSpread(0.2),
+  wobble: THREE.MathUtils.randFloat(0.4, 1.2),
+}));
+
+applyInstanceColors(fighters, fighterCount, (i) => PALETTE[(i * 3) % PALETTE.length]);
+applyInstanceColors(freighters, freighterCount, (i) => PALETTE[(i * 5 + 1) % PALETTE.length]);
+
+// Satellites: small orbiting rigs attached to planets
+const satsPerPlanet = 3;
+const satelliteCount = planets.length * satsPerPlanet;
+const satBody = new THREE.BoxGeometry(0.16, 0.12, 0.18);
+const satDish = new THREE.CylinderGeometry(0.06, 0.02, 0.08, 10, 1, true);
+satDish.rotateX(Math.PI / 2);
+satDish.translate(0, 0.02, 0.12);
+const satPanel = new THREE.BoxGeometry(0.34, 0.02, 0.14);
+satPanel.translate(0.26, 0.0, 0.0);
+const satPanel2 = satPanel.clone();
+satPanel2.translate(-0.52, 0, 0);
+const satelliteGeo = mergeGeometries([satBody, satDish, satPanel, satPanel2], false);
+const satellites = makeFleet(satelliteGeo, satelliteCount, 0.5);
+
+const satelliteData = [];
+for (let p = 0; p < planets.length; p++) {
+  for (let s = 0; s < satsPerPlanet; s++) {
+    satelliteData.push({
+      planet: p,
+      radius: THREE.MathUtils.randFloat(1.2, 2.6) + s * 0.35,
+      speed: THREE.MathUtils.randFloat(0.35, 0.8) * (Math.random() < 0.5 ? -1 : 1),
+      phase: Math.random() * Math.PI * 2,
+      incl: THREE.MathUtils.randFloat(-0.9, 0.9),
+    });
+  }
 }
-ships.instanceColor = new THREE.InstancedBufferAttribute(shipColors, 3);
+applyInstanceColors(satellites, satelliteCount, (i) => PALETTE[(i * 7 + 2) % PALETTE.length]);
 
 // --- Sentinel (hover + click target) ---
 const sentinel = new THREE.Group();
@@ -424,7 +503,7 @@ function updateLayerUI() {
     panelBody.textContent = "Drag to orbit the Atomic Core. Scroll / swipe to descend into wireframe space lanes.";
   } else if (layer === 1) {
     panelTitle.textContent = "Layer 1 — Space Lanes";
-    panelBody.textContent = "Wireframe planets and ships drift by. Hover the Sentinel to highlight it; click/tap to open a hologram.";
+    panelBody.textContent = "Planets, ships, and satellites drift by. Hover the Sentinel to highlight it; click/tap to open a hologram.";
   } else {
     panelTitle.textContent = "Layer 2 — Boundary";
     panelBody.textContent = "The Sentinel guards the interface. This is where AI characters, dialogue, and missions plug in next.";
@@ -449,6 +528,8 @@ const tmpMat = new THREE.Matrix4();
 const tmpQuat = new THREE.Quaternion();
 const tmpScale = new THREE.Vector3(1, 1, 1);
 const tmpPos = new THREE.Vector3();
+const tmpLocal = new THREE.Vector3();
+const tmpEuler = new THREE.Euler();
 
 function animate() {
   const dt = Math.min(0.05, clock.getDelta());
@@ -482,13 +563,30 @@ function animate() {
     p.g.rotation.z = Math.sin(t * 0.2) * 0.05;
   }
 
+  // Satellites: orbit their assigned planets (looping)
+  for (let i = 0; i < satelliteCount; i++) {
+    const s = satelliteData[i];
+    const center = planets[s.planet].g.position;
+    const a = t * s.speed + s.phase;
+    tmpLocal.set(Math.cos(a) * s.radius, 0, Math.sin(a) * s.radius);
+    tmpEuler.set(s.incl, a * 0.2, 0);
+    tmpLocal.applyEuler(tmpEuler);
+    tmpPos.copy(center).add(tmpLocal);
+
+    // face tangent-ish
+    tmpQuat.setFromEuler(new THREE.Euler(0, a + Math.PI / 2, 0));
+    tmpMat.compose(tmpPos, tmpQuat, tmpScale);
+    satellites.setMatrixAt(i, tmpMat);
+  }
+  satellites.instanceMatrix.needsUpdate = true;
+
   // Ships: fly forward through the scene (looping)
   const laneStart = -70;
   const laneEnd = 18;
   const laneLen = laneEnd - laneStart;
-  for (let i = 0; i < shipCount; i++) {
-    const s = shipData[i];
-    const z = laneStart + ((s.z0 + t * s.speed + i * 0.9) % laneLen);
+  for (let i = 0; i < fighterCount; i++) {
+    const s = fighterData[i];
+    const z = laneStart + ((s.z0 + t * s.speed + i * 1.3) % laneLen);
     const wobX = Math.sin(t * s.wobble + i) * 0.55;
     const wobY = Math.cos(t * (s.wobble * 0.85) + i) * 0.35;
 
@@ -501,9 +599,28 @@ function animate() {
       ),
     );
     tmpMat.compose(tmpPos, tmpQuat, tmpScale);
-    ships.setMatrixAt(i, tmpMat);
+    fighters.setMatrixAt(i, tmpMat);
   }
-  ships.instanceMatrix.needsUpdate = true;
+  fighters.instanceMatrix.needsUpdate = true;
+
+  for (let i = 0; i < freighterCount; i++) {
+    const s = freighterData[i];
+    const z = laneStart + ((s.z0 + t * s.speed + i * 2.0) % laneLen);
+    const wobX = Math.sin(t * s.wobble + i) * 0.28;
+    const wobY = Math.cos(t * (s.wobble * 0.85) + i) * 0.18;
+
+    tmpPos.set(s.x + wobX, s.y + wobY, z);
+    tmpQuat.setFromEuler(
+      new THREE.Euler(
+        s.pitch + Math.sin(t * 0.55 + i) * 0.08,
+        s.yaw + Math.sin(t * 0.8 + i) * 0.09,
+        s.roll + Math.sin(t * 0.7 + i) * 0.07,
+      ),
+    );
+    tmpMat.compose(tmpPos, tmpQuat, tmpScale);
+    freighters.setMatrixAt(i, tmpMat);
+  }
+  freighters.instanceMatrix.needsUpdate = true;
 
   // Hover highlight
   raycaster.setFromCamera(pointer, camera);
