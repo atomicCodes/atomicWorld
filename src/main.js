@@ -155,43 +155,120 @@ function ring(radius, tilt, rotY) {
 }
 core.add(ring(1.6, 0.65, 0.2), ring(2.0, -0.5, 1.1), ring(2.35, 0.15, 2.0));
 
-// --- Code tunnel (simple instanced shards) ---
-// This is intentionally NOT a shader yet: it’s readable, fast, and makes interaction obvious.
-const shardGeo = new THREE.PlaneGeometry(0.35, 0.08);
-const shardMat = new THREE.MeshBasicMaterial({
-  color: 0x8cffee,
-  transparent: true,
-  opacity: 0.35,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-  side: THREE.DoubleSide,
-});
-const shardCount = Math.min(1800, Math.max(900, Math.floor((window.innerWidth * window.innerHeight) / 900)));
-const shards = new THREE.InstancedMesh(shardGeo, shardMat, shardCount);
-shards.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-scene.add(shards);
+// --- Wireframe Universe: stars + planets + ships ---
+const universe = new THREE.Group();
+scene.add(universe);
 
-const shardData = new Array(shardCount).fill(0).map(() => ({
-  pos: new THREE.Vector3(
-    THREE.MathUtils.randFloatSpread(10),
-    THREE.MathUtils.randFloatSpread(6),
-    THREE.MathUtils.randFloat(-55, 12),
-  ),
-  rot: new THREE.Euler(0, THREE.MathUtils.randFloat(0, Math.PI * 2), 0),
-  spin: THREE.MathUtils.randFloat(0.2, 1.4) * (Math.random() < 0.5 ? -1 : 1),
+// Stars (simple points field)
+{
+  const starCount = Math.min(2400, Math.max(1200, Math.floor((window.innerWidth * window.innerHeight) / 700)));
+  const starGeom = new THREE.BufferGeometry();
+  const pos = new Float32Array(starCount * 3);
+  for (let i = 0; i < starCount; i++) {
+    const i3 = i * 3;
+    pos[i3 + 0] = THREE.MathUtils.randFloatSpread(80);
+    pos[i3 + 1] = THREE.MathUtils.randFloatSpread(55);
+    pos[i3 + 2] = THREE.MathUtils.randFloat(-120, 30);
+  }
+  starGeom.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const starMat = new THREE.PointsMaterial({
+    color: 0xbfefff,
+    size: 0.055,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.75,
+    depthWrite: false,
+  });
+  const stars = new THREE.Points(starGeom, starMat);
+  universe.add(stars);
+}
+
+// Planets (wireframe spheres + orbit rings)
+const planets = [];
+function addOrbitRing(parent, radius, color, opacity = 0.45) {
+  const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+  const curve = new THREE.EllipseCurve(0, 0, radius, radius * 0.62, 0, Math.PI * 2);
+  const pts = curve.getPoints(220).map((p) => new THREE.Vector3(p.x, 0, p.y));
+  const geom = new THREE.BufferGeometry().setFromPoints(pts);
+  const ringLine = new THREE.LineLoop(geom, mat);
+  ringLine.rotation.x = Math.PI / 2;
+  parent.add(ringLine);
+  return ringLine;
+}
+
+function addPlanet({ r, x, y, z, color, ring = false }) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const mat = new THREE.MeshBasicMaterial({
+    color,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.65,
+  });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 22, 18), mat);
+  g.add(mesh);
+
+  const orbits = [];
+  orbits.push(addOrbitRing(g, r * 1.55, 0x8cffee, 0.22));
+  orbits.push(addOrbitRing(g, r * 2.1, 0x9b7bff, 0.16));
+  if (ring) {
+    const ringMesh = new THREE.Mesh(
+      new THREE.TorusGeometry(r * 1.35, r * 0.12, 10, 48),
+      new THREE.MeshBasicMaterial({
+        color: 0x8cffee,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.22,
+      }),
+    );
+    ringMesh.rotation.x = Math.PI / 2.3;
+    ringMesh.rotation.y = 0.6;
+    g.add(ringMesh);
+  }
+
+  universe.add(g);
+  planets.push({ g, mesh, orbits, spin: THREE.MathUtils.randFloat(0.05, 0.18) * (Math.random() < 0.5 ? -1 : 1) });
+}
+
+addPlanet({ r: 1.15, x: 6.5, y: 1.6, z: -10, color: 0x8cffee, ring: true });
+addPlanet({ r: 1.75, x: -8.0, y: -1.2, z: -22, color: 0x9b7bff, ring: false });
+addPlanet({ r: 0.95, x: 4.4, y: -2.3, z: -34, color: 0xbfefff, ring: false });
+addPlanet({ r: 2.2, x: 10.2, y: 2.2, z: -48, color: 0x8cffee, ring: true });
+
+// Ships (wireframe instanced)
+const shipCount = Math.min(220, Math.max(120, Math.floor((window.innerWidth * window.innerHeight) / 7000)));
+const shipGeo = new THREE.ConeGeometry(0.16, 0.55, 6, 1, true);
+shipGeo.translate(0, 0.15, 0);
+const shipMat = new THREE.MeshBasicMaterial({
+  color: 0x8cffee,
+  wireframe: true,
+  transparent: true,
+  opacity: 0.5,
+});
+const ships = new THREE.InstancedMesh(shipGeo, shipMat, shipCount);
+ships.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+universe.add(ships);
+
+const shipData = new Array(shipCount).fill(0).map(() => ({
+  x: THREE.MathUtils.randFloatSpread(18),
+  y: THREE.MathUtils.randFloatSpread(10),
+  z0: THREE.MathUtils.randFloat(-62, 14),
+  speed: THREE.MathUtils.randFloat(2.2, 6.0),
+  yaw: THREE.MathUtils.randFloatSpread(Math.PI),
+  roll: THREE.MathUtils.randFloatSpread(0.9),
+  wobble: THREE.MathUtils.randFloat(0.6, 1.8),
   hue: THREE.MathUtils.randFloat(0.48, 0.62),
-  tw: THREE.MathUtils.randFloat(0.6, 1.4),
 }));
 
-// Per-instance color
-const colors = new Float32Array(shardCount * 3);
-for (let i = 0; i < shardCount; i++) {
-  const c = new THREE.Color().setHSL(shardData[i].hue, 0.95, 0.62);
-  colors[i * 3 + 0] = c.r;
-  colors[i * 3 + 1] = c.g;
-  colors[i * 3 + 2] = c.b;
+const shipColors = new Float32Array(shipCount * 3);
+for (let i = 0; i < shipCount; i++) {
+  const c = new THREE.Color().setHSL(shipData[i].hue, 0.95, 0.62);
+  shipColors[i * 3 + 0] = c.r;
+  shipColors[i * 3 + 1] = c.g;
+  shipColors[i * 3 + 2] = c.b;
 }
-shards.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
+ships.instanceColor = new THREE.InstancedBufferAttribute(shipColors, 3);
 
 // --- Sentinel (hover + click target) ---
 const sentinel = new THREE.Group();
@@ -301,10 +378,10 @@ function updateLayerUI() {
 
   if (layer === 0) {
     panelTitle.textContent = "Layer 0 — Core";
-    panelBody.textContent = "Drag to orbit the Atomic Core. Scroll / swipe to descend into the code stream.";
+    panelBody.textContent = "Drag to orbit the Atomic Core. Scroll / swipe to descend into wireframe space lanes.";
   } else if (layer === 1) {
-    panelTitle.textContent = "Layer 1 — Code Stream";
-    panelBody.textContent = "The glyph shards thicken. Hover the Sentinel to highlight it; click/tap to open a hologram.";
+    panelTitle.textContent = "Layer 1 — Space Lanes";
+    panelBody.textContent = "Wireframe planets and ships drift by. Hover the Sentinel to highlight it; click/tap to open a hologram.";
   } else {
     panelTitle.textContent = "Layer 2 — Boundary";
     panelBody.textContent = "The Sentinel guards the interface. This is where AI characters, dialogue, and missions plug in next.";
@@ -328,6 +405,7 @@ const clock = new THREE.Clock();
 const tmpMat = new THREE.Matrix4();
 const tmpQuat = new THREE.Quaternion();
 const tmpScale = new THREE.Vector3(1, 1, 1);
+const tmpPos = new THREE.Vector3();
 
 function animate() {
   const dt = Math.min(0.05, clock.getDelta());
@@ -350,28 +428,30 @@ function animate() {
     m.scale.setScalar(s);
   });
 
-  // Shards: billboarding + drift + pointer sway via camera direction
-  const camDir = new THREE.Vector3();
-  camera.getWorldDirection(camDir);
-  for (let i = 0; i < shardCount; i++) {
-    const d = shardData[i];
-    d.rot.y += d.spin * dt * 0.35;
-    const bob = Math.sin(t * d.tw + i * 0.07) * 0.012;
-    const p = d.pos;
-
-    // gentle “stream” motion
-    const driftX = Math.sin(t * 0.7 + i) * 0.002;
-    const driftY = Math.cos(t * 0.6 + i) * 0.002;
-
-    tmpQuat.setFromEuler(new THREE.Euler(0, d.rot.y, 0));
-    tmpMat.compose(
-      new THREE.Vector3(p.x + driftX, p.y + driftY + bob, p.z),
-      tmpQuat,
-      tmpScale,
-    );
-    shards.setMatrixAt(i, tmpMat);
+  // Planets: rotate + orbit-line drift
+  for (const p of planets) {
+    p.mesh.rotation.y += dt * p.spin;
+    p.mesh.rotation.x += dt * (p.spin * 0.5);
+    p.g.rotation.y += dt * (p.spin * 0.35);
+    p.g.rotation.z = Math.sin(t * 0.2) * 0.05;
   }
-  shards.instanceMatrix.needsUpdate = true;
+
+  // Ships: fly forward through the scene (looping)
+  const laneStart = -70;
+  const laneEnd = 18;
+  const laneLen = laneEnd - laneStart;
+  for (let i = 0; i < shipCount; i++) {
+    const s = shipData[i];
+    const z = laneStart + ((s.z0 + t * s.speed + i * 0.9) % laneLen);
+    const wobX = Math.sin(t * s.wobble + i) * 0.55;
+    const wobY = Math.cos(t * (s.wobble * 0.85) + i) * 0.35;
+
+    tmpPos.set(s.x + wobX, s.y + wobY, z);
+    tmpQuat.setFromEuler(new THREE.Euler(0, s.yaw + Math.sin(t + i) * 0.15, s.roll + Math.sin(t * 1.2 + i) * 0.18));
+    tmpMat.compose(tmpPos, tmpQuat, tmpScale);
+    ships.setMatrixAt(i, tmpMat);
+  }
+  ships.instanceMatrix.needsUpdate = true;
 
   // Hover highlight
   raycaster.setFromCamera(pointer, camera);
