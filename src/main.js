@@ -2,6 +2,7 @@ import "./style.css";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 // Build/version badge (so you always know what you're looking at)
 // Build info is injected by `vite.config.js` (window var + optional define constants).
@@ -167,26 +168,33 @@ scene.add(universe);
 
 // Stars (simple points field)
 {
-  const starCount = Math.min(2400, Math.max(1200, Math.floor((window.innerWidth * window.innerHeight) / 700)));
-  const starGeom = new THREE.BufferGeometry();
-  const pos = new Float32Array(starCount * 3);
-  for (let i = 0; i < starCount; i++) {
-    const i3 = i * 3;
-    pos[i3 + 0] = THREE.MathUtils.randFloatSpread(80);
-    pos[i3 + 1] = THREE.MathUtils.randFloatSpread(55);
-    pos[i3 + 2] = THREE.MathUtils.randFloat(-120, 30);
+  const px = window.innerWidth * window.innerHeight;
+  const farCount = Math.min(5200, Math.max(2200, Math.floor(px / 380)));
+  const nearCount = Math.min(1600, Math.max(600, Math.floor(px / 1500)));
+
+  function makeStarField(count, spread, zMin, zMax, size, opacity, color) {
+    const geom = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const i3 = i * 3;
+      pos[i3 + 0] = THREE.MathUtils.randFloatSpread(spread.x);
+      pos[i3 + 1] = THREE.MathUtils.randFloatSpread(spread.y);
+      pos[i3 + 2] = THREE.MathUtils.randFloat(zMin, zMax);
+    }
+    geom.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({
+      color,
+      size,
+      sizeAttenuation: true,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+    });
+    return new THREE.Points(geom, mat);
   }
-  starGeom.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  const starMat = new THREE.PointsMaterial({
-    color: 0xbfefff,
-    size: 0.055,
-    sizeAttenuation: true,
-    transparent: true,
-    opacity: 0.75,
-    depthWrite: false,
-  });
-  const stars = new THREE.Points(starGeom, starMat);
-  universe.add(stars);
+
+  universe.add(makeStarField(farCount, { x: 120, y: 80 }, -180, 40, 0.045, 0.62, 0xbfefff));
+  universe.add(makeStarField(nearCount, { x: 85, y: 60 }, -120, 30, 0.085, 0.85, 0xffffff));
 }
 
 // Planets (wireframe spheres + orbit rings)
@@ -202,30 +210,29 @@ function addOrbitRing(parent, radius, color, opacity = 0.45) {
   return ringLine;
 }
 
-function addPlanet({ r, x, y, z, color, ring = false }) {
+function addPlanet({ r, x, y, z, color, ring = false, segW = 12, segH = 10, opacity = 0.65 }) {
   const g = new THREE.Group();
   g.position.set(x, y, z);
 
-  const mat = new THREE.MeshBasicMaterial({
-    color,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.65,
-  });
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 22, 18), mat);
+  // Simplified planet wireframe: fewer segments + line wireframe (cleaner than triangle wireframe).
+  const sphere = new THREE.SphereGeometry(r, segW, segH);
+  const mesh = new THREE.LineSegments(
+    new THREE.WireframeGeometry(sphere),
+    new THREE.LineBasicMaterial({ color, transparent: true, opacity }),
+  );
   g.add(mesh);
 
   const orbits = [];
-  orbits.push(addOrbitRing(g, r * 1.55, 0x8cffee, 0.22));
-  orbits.push(addOrbitRing(g, r * 2.1, 0x9b7bff, 0.16));
+  orbits.push(addOrbitRing(g, r * 1.55, 0x8cffee, 0.2));
+  orbits.push(addOrbitRing(g, r * 2.1, 0x9b7bff, 0.14));
   if (ring) {
     const ringMesh = new THREE.Mesh(
-      new THREE.TorusGeometry(r * 1.35, r * 0.12, 10, 48),
+      new THREE.TorusGeometry(r * 1.35, r * 0.12, 8, 28),
       new THREE.MeshBasicMaterial({
         color: 0x8cffee,
         wireframe: true,
         transparent: true,
-        opacity: 0.22,
+        opacity: 0.18,
       }),
     );
     ringMesh.rotation.x = Math.PI / 2.3;
@@ -238,15 +245,42 @@ function addPlanet({ r, x, y, z, color, ring = false }) {
 }
 
 // Place planets so each "layer" has a distinct cluster.
-addPlanet({ r: 1.15, x: 6.5, y: 1.6, z: -16, color: 0x8cffee, ring: true });   // layer 1
-addPlanet({ r: 1.75, x: -8.0, y: -1.2, z: -26, color: 0x9b7bff, ring: false }); // layer 1
-addPlanet({ r: 0.95, x: 4.4, y: -2.3, z: -36, color: 0xbfefff, ring: false });  // layer 2
-addPlanet({ r: 2.2, x: 10.2, y: 2.2, z: -54, color: 0x8cffee, ring: true });    // layer 2
+// Layer 0 (near core): subtle moons
+addPlanet({ r: 0.55, x: -4.8, y: 1.4, z: -6, color: 0xbfefff, ring: false, segW: 10, segH: 8, opacity: 0.45 });
+addPlanet({ r: 0.7, x: 3.8, y: -1.1, z: -8.5, color: 0x9b7bff, ring: false, segW: 10, segH: 8, opacity: 0.48 });
+
+// Layer 1 cluster
+addPlanet({ r: 1.15, x: 6.5, y: 1.6, z: -16, color: 0x8cffee, ring: true, segW: 12, segH: 10 });
+addPlanet({ r: 1.75, x: -8.0, y: -1.2, z: -26, color: 0x9b7bff, ring: false, segW: 12, segH: 10 });
+addPlanet({ r: 1.05, x: -1.2, y: 2.8, z: -24, color: 0xbfefff, ring: false, segW: 11, segH: 9, opacity: 0.58 });
+
+// Layer 2 cluster (deeper)
+addPlanet({ r: 0.95, x: 4.4, y: -2.3, z: -36, color: 0xbfefff, ring: false, segW: 11, segH: 9 });
+addPlanet({ r: 2.2, x: 10.2, y: 2.2, z: -54, color: 0x8cffee, ring: true, segW: 12, segH: 10, opacity: 0.55 });
+addPlanet({ r: 1.35, x: -10.5, y: 1.8, z: -48, color: 0x9b7bff, ring: true, segW: 12, segH: 10, opacity: 0.5 });
+addPlanet({ r: 1.9, x: 0.5, y: -2.4, z: -62, color: 0xbfefff, ring: false, segW: 12, segH: 10, opacity: 0.5 });
 
 // Ships (wireframe instanced)
 const shipCount = Math.min(220, Math.max(120, Math.floor((window.innerWidth * window.innerHeight) / 7000)));
-const shipGeo = new THREE.ConeGeometry(0.16, 0.55, 6, 1, true);
-shipGeo.translate(0, 0.15, 0);
+// Build a simple recognizable spacecraft silhouette (fuselage + wings + tail + engine).
+const fuselage = new THREE.ConeGeometry(0.14, 0.7, 6, 1, true);
+fuselage.rotateX(Math.PI / 2);
+fuselage.translate(0, 0, 0.15);
+
+const cockpit = new THREE.SphereGeometry(0.12, 8, 6);
+cockpit.translate(0, 0.03, 0.33);
+
+const wing = new THREE.BoxGeometry(0.62, 0.03, 0.22);
+wing.translate(0, 0.02, 0.12);
+
+const tail = new THREE.BoxGeometry(0.18, 0.06, 0.22);
+tail.translate(0, 0.08, -0.14);
+
+const engine = new THREE.CylinderGeometry(0.07, 0.07, 0.26, 6, 1, true);
+engine.rotateX(Math.PI / 2);
+engine.translate(0, -0.02, -0.2);
+
+const shipGeo = mergeGeometries([fuselage, cockpit, wing, tail, engine], false);
 const shipMat = new THREE.MeshBasicMaterial({
   color: 0x8cffee,
   wireframe: true,
@@ -264,6 +298,7 @@ const shipData = new Array(shipCount).fill(0).map(() => ({
   speed: THREE.MathUtils.randFloat(2.2, 6.0),
   yaw: THREE.MathUtils.randFloatSpread(Math.PI),
   roll: THREE.MathUtils.randFloatSpread(0.9),
+  pitch: THREE.MathUtils.randFloatSpread(0.35),
   wobble: THREE.MathUtils.randFloat(0.6, 1.8),
   hue: THREE.MathUtils.randFloat(0.48, 0.62),
 }));
@@ -458,7 +493,13 @@ function animate() {
     const wobY = Math.cos(t * (s.wobble * 0.85) + i) * 0.35;
 
     tmpPos.set(s.x + wobX, s.y + wobY, z);
-    tmpQuat.setFromEuler(new THREE.Euler(0, s.yaw + Math.sin(t + i) * 0.15, s.roll + Math.sin(t * 1.2 + i) * 0.18));
+    tmpQuat.setFromEuler(
+      new THREE.Euler(
+        s.pitch + Math.sin(t * 0.8 + i) * 0.12,
+        s.yaw + Math.sin(t + i) * 0.15,
+        s.roll + Math.sin(t * 1.2 + i) * 0.18,
+      ),
+    );
     tmpMat.compose(tmpPos, tmpQuat, tmpScale);
     ships.setMatrixAt(i, tmpMat);
   }
