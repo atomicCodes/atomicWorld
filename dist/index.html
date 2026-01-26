@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#05060b" />
+    <title>Atomic Codes</title>
+    <meta name="description" content="Atomic Codes — futuristic interactive 3D brand experience." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="/assets/index-CXNTKi2d.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BJMXHlJ9.css">
+  <script>window.__ATOMIC_CODES_BUILD__={"starter":"CLEAN-REBUILD","sha":"4e3baf6","builtAt":"2026-01-08T20:43:22.557Z"};</script>
+</head>
+  <body>
+    <canvas id="c"></canvas>
+
+    <div
+      class="build"
+      id="buildBadge"
+      style="
+        position: fixed;
+        left: 50%;
+        top: 10px;
+        transform: translateX(-50%);
+        z-index: 99999;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 2px solid rgba(255, 61, 129, 0.7);
+        background: rgba(20, 10, 18, 0.85);
+        color: rgba(255, 255, 255, 0.92);
+        font: 700 13px/1.1 'Space Grotesk', system-ui, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        pointer-events: none;
+      "
+    >
+      BUILD BADGE: LOADING…
+    </div>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__mark">⚛</div>
+        <div class="brand__text">
+          <div class="brand__name">Atomic Codes</div>
+          <div class="brand__tag">Decode reality at the smallest scale</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="btnReset" type="button">Reset view</button>
+        <button class="btn btn--ghost" id="btnHelp" type="button">Help</button>
+      </div>
+    </header>
+
+    <aside class="panel" id="panel">
+      <div class="panel__title" id="panelTitle">Layer 0 — Core</div>
+      <div class="panel__body" id="panelBody">
+        Drag to orbit. Scroll / swipe to travel. Hover the Sentinel, then click/tap to open a hologram.
+      </div>
+      <div class="panel__meter">
+        <div class="panel__meterBar" id="meter"></div>
+      </div>
+    </aside>
+
+    <section class="holo" id="holo" aria-live="polite" aria-atomic="true">
+      <div class="holo__frame">
+        <div class="holo__title">CODE SENTINEL</div>
+        <div class="holo__text" id="holoText">
+          Signal locked. I guard the boundary between code and matter.
+        </div>
+        <div class="holo__actions">
+          <button class="btn" id="btnNext" type="button">Next</button>
+          <button class="btn btn--ghost" id="btnClose" type="button">Close</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="help" id="help" aria-live="polite">
+      <div class="help__frame">
+        <div class="help__title">How to interact (CLEAN-REBUILD)</div>
+        <ul class="help__list">
+          <li><b>Drag</b> to orbit the scene</li>
+          <li><b>Scroll</b> (or swipe) to travel through layers</li>
+          <li><b>Hover</b> the Sentinel to highlight it</li>
+          <li><b>Click / Tap</b> the Sentinel to open a hologram</li>
+        </ul>
+        <div class="help__actions">
+          <button class="btn" id="btnHelpClose" type="button">Got it</button>
+        </div>
+      </div>
+    </section>
+
+  </body>
+</html>
